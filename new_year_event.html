@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新年的氣息 - 活動模擬</title>
+    <style>
+        :root {
+            --primary-red: #d32f2f;
+            --primary-gold: #ffca28;
+            --dark-red: #b71c1c;
+            --bg-color: #fff8e1;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: var(--primary-red);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 5px solid var(--primary-gold);
+        }
+
+        h1 { margin: 0; font-size: 2em; }
+        .subtitle { font-size: 0.9em; opacity: 0.9; margin-top: 5px; }
+        .timer { font-weight: bold; font-size: 1.2em; margin-top: 10px; color: var(--primary-gold); }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .section-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #eee;
+        }
+
+        .section-title {
+            border-left: 5px solid var(--primary-red);
+            padding-left: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Gacha Section */
+        .gacha-controls {
+            text-align: center;
+            padding: 20px;
+            background: #ffebee;
+            border-radius: 8px;
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 1em;
+            transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.98); }
+
+        .btn-primary { background-color: var(--primary-red); color: white; font-weight: bold; }
+        .btn-secondary { background-color: #555; color: white; }
+        .btn-gold { background-color: var(--primary-gold); color: #333; font-weight: bold; }
+        .btn-outline { background: transparent; border: 1px solid var(--primary-red); color: var(--primary-red); }
+
+        /* Inventory Grid */
+        .zodiac-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+        }
+
+        .zodiac-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            position: relative;
+            background: white;
+        }
+
+        .zodiac-item.owned {
+            border-color: var(--primary-gold);
+            background-color: #fffde7;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .zodiac-icon { font-size: 2em; display: block; margin-bottom: 5px; }
+        .zodiac-name { font-size: 0.8em; font-weight: bold; display: block; }
+        .zodiac-count { 
+            font-size: 0.9em; 
+            color: var(--primary-red); 
+            font-weight: bold; 
+        }
+        .zodiac-rate { display: none; }
+
+        /* Essence Section */
+        .exchange-panel {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            display: none; /* Hidden by default */
+        }
+        .exchange-panel.active { display: block; }
+
+        .exchange-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .exchange-item {
+            border: 1px solid #ccc;
+            padding: 5px;
+            text-align: center;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .exchange-item:hover { background: #eee; }
+
+        /* Wish Box Section */
+        .box-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .wish-box {
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .wish-box.available {
+            border-color: var(--primary-red);
+            background-color: #fff5f5;
+        }
+
+        .box-title { font-weight: bold; font-size: 1.1em; margin-bottom: 5px; }
+        .box-req { font-size: 0.9em; color: #666; margin-bottom: 10px; }
+        .box-rewards { font-size: 0.8em; color: #555; text-align: left; margin-bottom: 10px; height: 60px; overflow-y: auto; }
+
+        /* Logs */
+        .log-area {
+            background: #333;
+            color: #0f0;
+            font-family: monospace;
+            padding: 10px;
+            height: 150px;
+            overflow-y: auto;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+        .modal h2 { color: var(--primary-red); }
+        .reward-highlight { font-size: 1.5em; color: var(--primary-gold); font-weight: bold; margin: 20px 0; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-layout { grid-template-columns: 1fr; }
+            .zodiac-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+
+        .material-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; padding: 5px; border-bottom: 1px solid #eee; }
+        .material-row input { width: 60px; padding: 5px; }
+        
+        .settings-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.9em; padding: 2px 0; }
+        .settings-row input { width: 50px; padding: 2px; text-align: center; }
+        
+        /* Reward Grid */
+        .reward-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .reward-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            background: white;
+        }
+        .reward-img { width: 40px; height: 40px; object-fit: contain; margin-bottom: 5px; }
+        .reward-name { font-size: 0.8em; font-weight: bold; display: block; }
+        .reward-count { font-size: 0.9em; color: var(--primary-red); font-weight: bold; }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>新年的氣息</h1>
+    <div class="subtitle">活動期間：2026/01/01 00:00 ～ 2026/01/13 23:59</div>
+    <div class="timer" id="countdown">載入中...</div>
+    <button class="btn-secondary" style="margin-top: 10px; font-size: 0.8em;" onclick="resetData()">重置所有數據</button>
+</header>
+
+<div class="container main-layout">
+
+    <!-- Left Panel -->
+    <div class="left-panel">
+        <!-- Gacha System -->
+        <div class="section-card">
+            <div class="section-title">
+                <span>1. 獲取氣息</span>
+            </div>
+            <div class="gacha-controls">
+                <p>使用商城販售的「新年的氣息」道具，隨機獲得一個「十二生肖氣息」。</p>
+                <p>目前累計抽取次數: <span id="totalDraws" style="font-weight:bold; color:var(--primary-red);">0</span></p>
+                <button class="btn-primary" onclick="drawGacha(1)">使用 1 個氣息</button>
+                <button class="btn-primary" onclick="drawGacha(10)">使用 10 個氣息</button>
+            </div>
+        </div>
+
+        <!-- Logs -->
+        <div class="section-card">
+            <div class="section-title">活動紀錄</div>
+            <div class="log-area" id="logArea"></div>
+        </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="right-panel">
+        <!-- Inventory & Exchange -->
+        <div class="section-card">
+            <div class="section-title">
+                <span>2. 生肖氣息背包</span>
+                <div>
+                    <span style="margin-right: 10px; color: var(--dark-red); font-weight: bold;">精華: <span id="essenceCount">0</span></span>
+                    <button class="btn-outline" style="font-size: 0.8em;" onclick="openDecomposeModal()">分解</button>
+                    <button class="btn-outline" style="font-size: 0.8em;" onclick="toggleExchange()">兌換</button>
+                </div>
+            </div>
+
+            <div class="zodiac-grid" id="zodiacGrid">
+                <!-- Grid items generated by JS -->
+            </div>
+
+            <!-- Exchange Panel (Hidden by default) -->
+            <div class="exchange-panel" id="exchangePanel">
+                <h3>指定兌換</h3>
+                <p>選擇目標氣息，並消耗任意 <span id="costLabel">100</span> 個氣息進行兌換。</p>
+                <div class="exchange-grid" id="exchangeGrid">
+                    <!-- Exchange items generated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Wish Box System -->
+        <div class="section-card">
+            <div class="section-title">3. 心願箱兌換</div>
+            <p style="font-size:0.9em; color:#666;">消耗不同種類數量的氣息來開啟心願箱。開啟後會扣除對應數量的氣息種類（每種扣除1個）。</p>
+            <div class="box-container" id="boxContainer">
+                <!-- Boxes generated by JS -->
+            </div>
+        </div>
+
+        <!-- Reward History -->
+        <div class="section-card">
+            <div class="section-title">心願箱兌換紀錄</div>
+            <div id="rewardLogGrid"></div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Reward Modal -->
+<div class="modal-overlay" id="rewardModal" onclick="closeModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+        <h2 id="modalTitle">恭喜獲得</h2>
+        <div class="reward-highlight" id="modalReward">獎勵名稱</div>
+        <button class="btn-primary" onclick="closeModal()">確定</button>
+    </div>
+</div>
+
+<!-- Exchange Selection Modal -->
+<div class="modal-overlay" id="exchangeModal">
+    <div class="modal" style="max-width: 500px;" onclick="event.stopPropagation()">
+        <h2 id="exchangeTargetName">兌換目標</h2>
+        <p>請選擇要消耗的氣息 (需 <span id="exchangeCostDisplay">100</span> 個)</p>
+        <div id="exchangeMaterials" style="text-align:left; max-height: 300px; overflow-y: auto; margin: 10px 0; border: 1px solid #eee; padding: 10px;"></div>
+        <div style="margin-top: 10px; font-weight: bold; color: var(--primary-red);">
+            已選數量: <span id="currentSelectionCount">0</span> / <span id="targetCost">100</span>
+        </div>
+        <div style="margin-top: 20px;">
+            <button class="btn-secondary" onclick="closeExchangeModal()">取消</button>
+            <button class="btn-primary" id="confirmExchangeBtn" disabled onclick="confirmExchange()">確認兌換</button>
+        </div>
+    </div>
+</div>
+
+<!-- Decompose Modal -->
+<div class="modal-overlay" id="decomposeModal">
+    <div class="modal" style="max-width: 500px;" onclick="event.stopPropagation()">
+        <h2>分解氣息</h2>
+        <p>選擇要分解的氣息轉化為精華</p>
+        <div id="decomposeMaterials" style="text-align:left; max-height: 300px; overflow-y: auto; margin: 10px 0; border: 1px solid #eee; padding: 10px;"></div>
+        <div style="margin-top: 10px; font-weight: bold; color: var(--dark-red);">
+            預計獲得精華: <span id="decomposeEssencePreview">0</span>
+        </div>
+        <div style="margin-top: 20px;">
+            <button class="btn-secondary" onclick="closeDecomposeModal()">取消</button>
+            <button class="btn-primary" onclick="confirmDecompose()">確認分解</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Configuration ---
+    const ZODIACS = [
+        { id: 'rat', name: '鼠', icon: '🐭', rate: 2.50, decomposeRate: 1 },
+        { id: 'ox', name: '牛', icon: '🐮', rate: 3.00, decomposeRate: 1 },
+        { id: 'tiger', name: '虎', icon: '🐯', rate: 3.50, decomposeRate: 1 },
+        { id: 'rabbit', name: '兔', icon: '🐰', rate: 29.20, decomposeRate: 1 },
+        { id: 'dragon', name: '龍', icon: '🐲', rate: 29.25, decomposeRate: 1 },
+        { id: 'snake', name: '蛇', icon: '🐍', rate: 29.25, decomposeRate: 1 },
+        { id: 'horse', name: '馬', icon: '🐴', rate: 0.15, decomposeRate: 1 },
+        { id: 'goat', name: '羊', icon: '🐑', rate: 0.20, decomposeRate: 1 },
+        { id: 'monkey', name: '猴', icon: '🐵', rate: 0.25, decomposeRate: 1 },
+        { id: 'rooster', name: '雞', icon: '🐔', rate: 0.80, decomposeRate: 1 },
+        { id: 'dog', name: '狗', icon: '🐶', rate: 0.90, decomposeRate: 1 },
+        { id: 'pig', name: '豬', icon: '🐷', rate: 1.00, decomposeRate: 1 }
+    ];
+
+    const BOXES = [
+        {
+            id: 'small', name: '小吉等級箱子', req: 3, color: '#81c784',
+            rewards: [
+                { name: '恢復方塊', img: 'https://placehold.co/60/81c784/fff?text=A1' },
+                { name: '閃炫方塊', img: 'https://placehold.co/60/81c784/fff?text=A2' },
+                { name: '恢復附加方塊', img: 'https://placehold.co/60/81c784/fff?text=A3' }
+            ]
+        },
+        {
+            id: 'medium', name: '中吉等級箱子', req: 6, color: '#64b5f6',
+            rewards: [
+                { name: '高級自定義皮膚變更券', img: 'https://placehold.co/60/64b5f6/fff?text=B1' },
+                { name: '自由造型券 10個', img: 'https://placehold.co/60/64b5f6/fff?text=B2' },
+                { name: '彩色稜鏡 Pro', img: 'https://placehold.co/60/64b5f6/fff?text=B3' }
+            ]
+        },
+        {
+            id: 'large', name: '大吉等級箱子', req: 9, color: '#ba68c8',
+            rewards: [
+                { name: '魔法賦予第3階段賦予卷軸(罕見)', img: 'https://placehold.co/60/ba68c8/fff?text=C1' },
+                { name: '時裝內襯1種選擇券', img: 'https://placehold.co/60/ba68c8/fff?text=C2' },
+                { name: '魔法靈氣30個', img: 'https://placehold.co/60/ba68c8/fff?text=C3' }
+            ]
+        },
+        {
+            id: 'transcend', name: '超越等級箱子', req: 12, color: '#ffd54f',
+            rewards: [
+                { name: '苦行的戒指', img: 'https://placehold.co/60/ffd54f/333?text=D1' },
+                { name: '燃燒之戒', img: 'https://placehold.co/60/ffd54f/333?text=D2' },
+                { name: '輪迴碑石', img: 'https://placehold.co/60/ffd54f/333?text=D3' }
+            ]
+        }
+    ];
+
+    const EXCHANGE_COST = 100; // Essence needed to craft 1 zodiac
+
+    // --- State ---
+    let inventory = {};
+    let totalDraws = 0;
+    let essence = 0;
+    let exchangeTargetId = null;
+    let rewardCounts = {};
+
+    // --- Initialization ---
+    function init() {
+        updateTimer();
+        setInterval(updateTimer, 1000);
+        renderInventory();
+        renderBoxes();
+        renderExchange();
+        
+        // Init Reward Counts
+        BOXES.forEach(b => b.rewards.forEach(item => {
+            if(rewardCounts[item.name] === undefined) rewardCounts[item.name] = 0;
+        }));
+        renderRewardLog();
+
+        document.getElementById('costLabel').innerText = EXCHANGE_COST;
+        
+        // Initialize inventory if empty
+        if(Object.keys(inventory).length === 0) {
+            resetData();
+        }
+        log("活動模擬器已啟動。");
+    }
+
+    function resetData() {
+        inventory = {};
+        ZODIACS.forEach(z => {
+            inventory[z.id] = 0;
+        });
+        essence = 0;
+        for(let key in rewardCounts) rewardCounts[key] = 0;
+        
+        totalDraws = 0;
+        document.getElementById('totalDraws').innerText = 0;
+        document.getElementById('logArea').innerHTML = '';
+        log("數據已重置。");
+        renderInventory();
+        renderBoxes();
+        renderRewardLog();
+    }
+
+    // --- Logic: Timer ---
+    function updateTimer() {
+        const end = new Date('2026-01-13T23:59:00').getTime();
+        const now = new Date().getTime(); // Using current real time for simulation feel, or fixed if strictly needed
+        // For simulation purposes, if we are before 2026, it shows countdown. 
+        // If we are past, it shows ended. 
+        // Since current date is 2025 (in context), it will show a long countdown.
+        
+        const distance = end - now;
+        
+        if (distance < 0) {
+            document.getElementById('countdown').innerText = "活動已結束";
+            return;
+        }
+
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        document.getElementById('countdown').innerText = `剩餘時間：${days}天 ${hours}時 ${minutes}分 ${seconds}秒`;
+    }
+
+    // --- Logic: Gacha ---
+    function drawGacha(times) {
+        let results = [];
+        for(let i=0; i<times; i++) {
+            const rand = Math.random() * 100;
+            let cumulative = 0;
+            for(let z of ZODIACS) {
+                cumulative += z.rate;
+                if(rand <= cumulative) {
+                    inventory[z.id]++;
+                    results.push(z.name);
+                    break;
+                }
+            }
+        }
+        totalDraws += times;
+        document.getElementById('totalDraws').innerText = totalDraws;
+        
+        // Log results
+        if(times === 1) {
+            log(`獲得氣息: ${results[0]}`);
+        } else {
+            // Group counts for cleaner log
+            const counts = {};
+            results.forEach(x => counts[x] = (counts[x] || 0) + 1);
+            const logStr = Object.entries(counts).map(([k,v]) => `${k}x${v}`).join(', ');
+            log(`10連抽結果: ${logStr}`);
+        }
+
+        renderInventory();
+        renderBoxes(); // Update box availability
+    }
+
+    // --- Logic: Inventory & Essence ---
+    function renderInventory() {
+        const grid = document.getElementById('zodiacGrid');
+        grid.innerHTML = '';
+        
+        ZODIACS.forEach(z => {
+            const count = inventory[z.id];
+            const div = document.createElement('div');
+            div.className = `zodiac-item ${count > 0 ? 'owned' : ''}`;
+            div.innerHTML = `
+                <span class="zodiac-icon">${z.icon}</span>
+                <span class="zodiac-name">${z.name}</span>
+                <span class="zodiac-count">${count}</span>
+                <span class="zodiac-rate">${z.rate}%</span>
+            `;
+            grid.appendChild(div);
+        });
+        document.getElementById('essenceCount').innerText = essence;
+    }
+
+    function toggleExchange() {
+        const panel = document.getElementById('exchangePanel');
+        panel.classList.toggle('active');
+    }
+
+    function renderExchange() {
+        const grid = document.getElementById('exchangeGrid');
+        grid.innerHTML = '';
+        ZODIACS.forEach(z => {
+            const div = document.createElement('div');
+            div.className = 'exchange-item';
+            div.innerHTML = `${z.icon} ${z.name}`;
+            div.onclick = () => openExchangeModal(z.id);
+            grid.appendChild(div);
+        });
+    }
+
+    // --- Exchange Modal Logic ---
+    function openExchangeModal(targetId) {
+        exchangeTargetId = targetId;
+        const targetName = getZodiacName(targetId);
+        document.getElementById('exchangeTargetName').innerText = `兌換目標：${targetName}`;
+        document.getElementById('exchangeCostDisplay').innerText = EXCHANGE_COST;
+        document.getElementById('targetCost').innerText = EXCHANGE_COST;
+        document.getElementById('exchangeModal').style.display = 'flex';
+        
+        renderExchangeMaterials();
+    }
+
+    function closeExchangeModal() {
+        document.getElementById('exchangeModal').style.display = 'none';
+        exchangeTargetId = null;
+    }
+
+    function renderExchangeMaterials() {
+        const container = document.getElementById('exchangeMaterials');
+        container.innerHTML = '';
+        
+        ZODIACS.forEach(z => {
+            if(inventory[z.id] > 0) {
+                const row = document.createElement('div');
+                row.className = 'material-row';
+                row.innerHTML = `
+                    <span>${z.icon} ${z.name} (持有: ${inventory[z.id]})</span>
+                    <input type="number" min="0" max="${inventory[z.id]}" value="0" 
+                           class="exchange-input" data-id="${z.id}" oninput="updateExchangeSummary()">
+                `;
+                container.appendChild(row);
+            }
+        });
+        updateExchangeSummary();
+    }
+
+    function updateExchangeSummary() {
+        const inputs = document.querySelectorAll('.exchange-input');
+        let total = 0;
+        inputs.forEach(input => {
+            let val = parseInt(input.value) || 0;
+            if(val < 0) val = 0;
+            const max = parseInt(input.max);
+            if(val > max) { val = max; input.value = max; }
+            total += val;
+        });
+        
+        document.getElementById('currentSelectionCount').innerText = total;
+        const btn = document.getElementById('confirmExchangeBtn');
+        btn.disabled = total < EXCHANGE_COST;
+        
+        if(total > EXCHANGE_COST) {
+            document.getElementById('currentSelectionCount').style.color = 'orange';
+        } else if (total === EXCHANGE_COST) {
+            document.getElementById('currentSelectionCount').style.color = 'green';
+        } else {
+            document.getElementById('currentSelectionCount').style.color = 'red';
+        }
+    }
+
+    function confirmExchange() {
+        const inputs = document.querySelectorAll('.exchange-input');
+        let total = 0;
+        const consumed = {};
+
+        inputs.forEach(input => {
+            const val = parseInt(input.value) || 0;
+            if(val > 0) {
+                total += val;
+                consumed[input.dataset.id] = val;
+            }
+        });
+
+        if(total < EXCHANGE_COST) return;
+
+        // Execute exchange
+        for(let id in consumed) {
+            inventory[id] -= consumed[id];
+        }
+        inventory[exchangeTargetId]++;
+        
+        log(`消耗 ${total} 個氣息，兌換了 [${getZodiacName(exchangeTargetId)}]`);
+        closeExchangeModal();
+        renderInventory();
+        renderBoxes();
+    }
+
+    // --- Decompose Logic ---
+    function openDecomposeModal() {
+        document.getElementById('decomposeModal').style.display = 'flex';
+        renderDecomposeMaterials();
+    }
+
+    function closeDecomposeModal() {
+        document.getElementById('decomposeModal').style.display = 'none';
+    }
+
+    function renderDecomposeMaterials() {
+        const container = document.getElementById('decomposeMaterials');
+        container.innerHTML = '';
+        
+        ZODIACS.forEach(z => {
+            if(inventory[z.id] > 0) {
+                const row = document.createElement('div');
+                row.className = 'material-row';
+                row.innerHTML = `
+                    <span>${z.icon} ${z.name} (持有: ${inventory[z.id]}) [1:${z.decomposeRate}]</span>
+                    <input type="number" min="0" max="${inventory[z.id]}" value="0" 
+                           class="decompose-input" data-id="${z.id}" oninput="updateDecomposeSummary()">
+                `;
+                container.appendChild(row);
+            }
+        });
+        updateDecomposeSummary();
+    }
+
+    function updateDecomposeSummary() {
+        const inputs = document.querySelectorAll('.decompose-input');
+        let totalEssence = 0;
+        inputs.forEach(input => {
+            let val = parseInt(input.value) || 0;
+            if(val < 0) val = 0;
+            const max = parseInt(input.max);
+            if(val > max) { val = max; input.value = max; }
+            
+            const id = input.dataset.id;
+            const z = ZODIACS.find(item => item.id === id);
+            totalEssence += val * (z.decomposeRate || 1);
+        });
+        document.getElementById('decomposeEssencePreview').innerText = totalEssence;
+    }
+
+    function confirmDecompose() {
+        const inputs = document.querySelectorAll('.decompose-input');
+        let totalEssence = 0;
+        let logDetails = [];
+
+        inputs.forEach(input => {
+            const val = parseInt(input.value) || 0;
+            if(val > 0) {
+                const id = input.dataset.id;
+                inventory[id] -= val;
+                const z = ZODIACS.find(item => item.id === id);
+                const gained = val * (z.decomposeRate || 1);
+                totalEssence += gained;
+                logDetails.push(`${getZodiacName(id)}x${val}`);
+            }
+        });
+
+        if(totalEssence === 0) return;
+
+        essence += totalEssence;
+        log(`分解: ${logDetails.join(', ')}，獲得 ${totalEssence} 精華`);
+        
+        closeDecomposeModal();
+        renderInventory();
+        renderBoxes();
+    }
+
+    // --- Logic: Boxes ---
+    function renderBoxes() {
+        const container = document.getElementById('boxContainer');
+        container.innerHTML = '';
+
+        // Calculate owned unique types
+        const ownedTypes = ZODIACS.filter(z => inventory[z.id] > 0).map(z => z.id);
+        const uniqueCount = ownedTypes.length;
+
+        BOXES.forEach(box => {
+            const canOpen = uniqueCount >= box.req;
+            const div = document.createElement('div');
+            div.className = `wish-box ${canOpen ? 'available' : ''}`;
+            div.innerHTML = `
+                <div class="box-title" style="color:${box.color}">${box.name}</div>
+                <div class="box-req">需消耗 ${box.req} 種氣息 (目前: ${uniqueCount})</div>
+                <div class="box-rewards">
+                    <strong>可能獎勵:</strong><br>
+                    ${box.rewards.map(r => `• ${r.name}`).join('<br>')}
+                </div>
+                <button class="${canOpen ? 'btn-primary' : 'btn-secondary'}" 
+                    ${canOpen ? '' : 'disabled'} 
+                    onclick="openBox('${box.id}')">
+                    ${canOpen ? '開啟箱子' : '條件未符'}
+                </button>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function openBox(boxId) {
+        const box = BOXES.find(b => b.id === boxId);
+        if(!box) return;
+
+        // Get owned types
+        const ownedTypes = ZODIACS.filter(z => inventory[z.id] > 0).map(z => z.id);
+        
+        if(ownedTypes.length < box.req) {
+            alert("持有的氣息種類不足！");
+            return;
+        }
+
+        if(!confirm(`確定要開啟 ${box.name} 嗎？\n將隨機消耗 ${box.req} 種氣息各 1 個。`)) {
+            return;
+        }
+
+        // Consume logic: Prioritize consuming duplicates? Or just first N?
+        // To be safe and user friendly in simulation, let's prioritize types with > 1 count first to save uniques if possible,
+        // but the requirement says "Consume X types". If I have 12 types and open a 3-type box, I lose 3 types.
+        // Let's sort ownedTypes by count descending (consume extras first)
+        ownedTypes.sort((a, b) => inventory[b] - inventory[a]);
+
+        const typesToConsume = ownedTypes.slice(0, box.req);
+        
+        // Deduct
+        typesToConsume.forEach(id => inventory[id]--);
+        
+        // Reward
+        const rewardIndex = Math.floor(Math.random() * box.rewards.length);
+        const reward = box.rewards[rewardIndex];
+
+        log(`開啟 [${box.name}]，消耗氣息: [${typesToConsume.map(getZodiacName).join(', ')}]`);
+        log(`>>> 獲得大獎: ${reward.name}`);
+
+        // Record reward
+        if(rewardCounts[reward.name] !== undefined) {
+            rewardCounts[reward.name]++;
+        }
+        renderRewardLog();
+
+        showModal(reward.name);
+        renderInventory();
+        renderBoxes();
+    }
+
+    // --- Logs ---
+    function renderRewardLog() {
+        const grid = document.getElementById('rewardLogGrid');
+        grid.innerHTML = '';
+        grid.className = 'reward-grid';
+        
+        const rewardMap = {};
+        BOXES.forEach(b => b.rewards.forEach(r => rewardMap[r.name] = r.img));
+
+        for(let [name, count] of Object.entries(rewardCounts)) {
+            const div = document.createElement('div');
+            div.className = 'reward-item';
+            const imgUrl = rewardMap[name] || '';
+            div.innerHTML = `
+                <img src="${imgUrl}" class="reward-img" alt="${name}">
+                <span class="reward-name">${name}</span>
+                <span class="reward-count">${count}</span>
+            `;
+            grid.appendChild(div);
+        }
+    }
+
+    // --- Helpers ---
+    function getZodiacName(id) {
+        return ZODIACS.find(z => z.id === id).name;
+    }
+
+    function log(msg) {
+        const area = document.getElementById('logArea');
+        const time = new Date().toLocaleTimeString();
+        area.innerHTML = `[${time}] ${msg}<br>` + area.innerHTML;
+    }
+
+    function showModal(rewardName) {
+        document.getElementById('modalReward').innerText = rewardName;
+        document.getElementById('rewardModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('rewardModal').style.display = 'none';
+    }
+
+    // Start
+    init();
+
+</script>
+</body>
+</html>
