@@ -166,7 +166,7 @@
 
         .box-title { font-weight: bold; font-size: 1.1em; margin-bottom: 5px; }
         .box-req { font-size: 0.9em; color: #666; margin-bottom: 10px; }
-        .box-rewards { font-size: 0.8em; color: #555; text-align: left; margin-bottom: 10px; height: 60px; overflow-y: auto; }
+        .box-rewards { font-size: 0.8em; color: #555; text-align: left; margin-bottom: 10px; }
 
         /* Logs */
         .log-area {
@@ -354,18 +354,18 @@
 <script>
     // --- Configuration ---
     const ZODIACS = [
-        { id: 'rat', name: '鼠', icon: '🐭', rate: 2.50, decomposeRate: 1, exchangeCost: 100 },
-        { id: 'ox', name: '牛', icon: '🐮', rate: 3.00, decomposeRate: 1, exchangeCost: 100 },
-        { id: 'tiger', name: '虎', icon: '🐯', rate: 3.50, decomposeRate: 1, exchangeCost: 100 },
-        { id: 'rabbit', name: '兔', icon: '🐰', rate: 29.20, decomposeRate: 1, exchangeCost: 100 },
-        { id: 'dragon', name: '龍', icon: '🐲', rate: 29.25, decomposeRate: 1, exchangeCost: 100 },
-        { id: 'snake', name: '蛇', icon: '🐍', rate: 29.25, decomposeRate: 1, exchangeCost: 100 },
-        { id: 'horse', name: '馬', icon: '🐴', rate: 0.15, decomposeRate: 1, exchangeCost: 100 },
-        { id: 'goat', name: '羊', icon: '🐑', rate: 0.20, decomposeRate: 1, exchangeCost: 100 },
-        { id: 'monkey', name: '猴', icon: '🐵', rate: 0.25, decomposeRate: 1, exchangeCost: 100 },
-        { id: 'rooster', name: '雞', icon: '🐔', rate: 0.80, decomposeRate: 1, exchangeCost: 100 },
-        { id: 'dog', name: '狗', icon: '🐶', rate: 0.90, decomposeRate: 1, exchangeCost: 100 },
-        { id: 'pig', name: '豬', icon: '🐷', rate: 1.00, decomposeRate: 1, exchangeCost: 100 }
+        { id: 'rat', name: '鼠', icon: '🐭', rate: 2.50, decomposeRate: 1, exchangeCost: 50 },
+        { id: 'ox', name: '牛', icon: '🐮', rate: 3.00, decomposeRate: 1, exchangeCost: 50 },
+        { id: 'tiger', name: '虎', icon: '🐯', rate: 3.50, decomposeRate: 1, exchangeCost: 50 },
+        { id: 'rabbit', name: '兔', icon: '🐰', rate: 29.20, decomposeRate: 1, exchangeCost: 10 },
+        { id: 'dragon', name: '龍', icon: '🐲', rate: 29.25, decomposeRate: 1, exchangeCost: 10 },
+        { id: 'snake', name: '蛇', icon: '🐍', rate: 29.25, decomposeRate: 1, exchangeCost: 10 },
+        { id: 'horse', name: '馬', icon: '🐴', rate: 0.15, decomposeRate: 1, exchangeCost: 1500 },
+        { id: 'goat', name: '羊', icon: '🐑', rate: 0.20, decomposeRate: 1, exchangeCost: 1500 },
+        { id: 'monkey', name: '猴', icon: '🐵', rate: 0.25, decomposeRate: 1, exchangeCost: 1500 },
+        { id: 'rooster', name: '雞', icon: '🐔', rate: 0.80, decomposeRate: 1, exchangeCost: 200 },
+        { id: 'dog', name: '狗', icon: '🐶', rate: 0.90, decomposeRate: 1, exchangeCost: 200 },
+        { id: 'pig', name: '豬', icon: '🐷', rate: 1.00, decomposeRate: 1, exchangeCost: 200 }
     ];
 
     const BOXES = [
