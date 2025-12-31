@@ -231,6 +231,15 @@
         .reward-name { font-size: 0.8em; font-weight: bold; display: block; }
         .reward-count { font-size: 0.9em; color: var(--primary-red); font-weight: bold; }
 
+        /* Selection Modal Items */
+        .selection-item {
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .selection-item.selected {
+            box-shadow: 0 0 0 3px var(--primary-red);
+            transform: scale(0.95);
+        }
     </style>
 </head>
 <body>
@@ -272,10 +281,15 @@
         <div class="section-card">
             <div class="section-title">
                 <span>2. 生肖氣息背包</span>
-                <div>
+                <div id="inventoryControls">
                     <span style="margin-right: 10px; color: var(--dark-red); font-weight: bold;">精華: <span id="essenceCount">0</span></span>
                     <button class="btn-outline" style="font-size: 0.8em;" onclick="openDecomposeModal()">分解</button>
                     <button class="btn-outline" style="font-size: 0.8em;" onclick="toggleExchange()">兌換</button>
+                </div>
+                <div id="selectionControls" style="display:none; align-items: center;">
+                    <span id="selectionStatus" style="font-size: 0.9em; margin-right: 10px; font-weight: bold; color: var(--primary-red);"></span>
+                    <button class="btn-secondary" style="font-size: 0.8em; margin-right: 5px;" onclick="cancelSelectionMode()">取消</button>
+                    <button class="btn-primary" style="font-size: 0.8em;" id="confirmInventorySelectionBtn" onclick="confirmInventorySelection()" disabled>確認</button>
                 </div>
             </div>
 
@@ -408,6 +422,9 @@
     let essence = 0;
     let exchangeTargetId = null;
     let rewardCounts = {};
+    let currentBoxId = null;
+    let selectedMaterials = new Set();
+    let isSelectionMode = false;
 
     // --- Initialization ---
     function init() {
@@ -518,6 +535,17 @@
             const count = inventory[z.id];
             const div = document.createElement('div');
             div.className = `zodiac-item ${count > 0 ? 'owned' : ''}`;
+
+            if (isSelectionMode && count > 0) {
+                div.classList.add('selection-item');
+                div.style.cursor = 'pointer';
+                if (selectedMaterials.has(z.id)) {
+                    div.classList.add('selected');
+                }
+                div.onclick = () => toggleInventorySelection(z.id);
+            } else {
+                div.onclick = null;
+            }
             
             if(count > 0) {
                 div.style.backgroundColor = z.color;
@@ -726,21 +754,72 @@
             return;
         }
 
-        if(!confirm(`確定要開啟 ${box.name} 嗎？\n將隨機消耗 ${box.req} 種氣息各 1 個。`)) {
+        currentBoxId = boxId;
+        selectedMaterials.clear();
+
+        // 如果需求是 12 種 (超越等級箱子)，直接全選並開啟，跳過選擇介面
+        if (box.req === 12) {
+            ZODIACS.forEach(z => selectedMaterials.add(z.id));
+            confirmInventorySelection();
             return;
         }
 
-        // Consume logic: Prioritize consuming duplicates? Or just first N?
-        // To be safe and user friendly in simulation, let's prioritize types with > 1 count first to save uniques if possible,
-        // but the requirement says "Consume X types". If I have 12 types and open a 3-type box, I lose 3 types.
-        // Let's sort ownedTypes by count descending (consume extras first)
-        ownedTypes.sort((a, b) => inventory[b] - inventory[a]);
+        startSelectionMode();
+    }
 
-        const typesToConsume = ownedTypes.slice(0, box.req);
+    function startSelectionMode() {
+        isSelectionMode = true;
+        document.getElementById('inventoryControls').style.display = 'none';
+        document.getElementById('selectionControls').style.display = 'flex';
+        updateSelectionUI();
+        renderInventory();
+        // 自動捲動到背包位置
+        document.getElementById('zodiacGrid').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function cancelSelectionMode() {
+        isSelectionMode = false;
+        currentBoxId = null;
+        selectedMaterials.clear();
+        document.getElementById('inventoryControls').style.display = 'block';
+        document.getElementById('selectionControls').style.display = 'none';
+        renderInventory();
+    }
+
+    function toggleInventorySelection(id) {
+        const box = BOXES.find(b => b.id === currentBoxId);
+        if (selectedMaterials.has(id)) {
+            selectedMaterials.delete(id);
+        } else {
+            if (selectedMaterials.size < box.req) {
+                selectedMaterials.add(id);
+            }
+        }
+        renderInventory();
+        updateSelectionUI();
+    }
+
+    function updateSelectionUI() {
+        const box = BOXES.find(b => b.id === currentBoxId);
+        if(!box) return;
         
-        // Deduct
+        const btn = document.getElementById('confirmInventorySelectionBtn');
+        const status = document.getElementById('selectionStatus');
+        const current = selectedMaterials.size;
+        
+        status.innerText = `請選擇 ${box.req} 種氣息 (${current}/${box.req})`;
+        btn.innerText = `確認開啟`;
+        btn.disabled = (current !== box.req);
+    }
+
+    function confirmInventorySelection() {
+        const box = BOXES.find(b => b.id === currentBoxId);
+        if (selectedMaterials.size !== box.req) return;
+
+        // Consume
+        const typesToConsume = Array.from(selectedMaterials);
         typesToConsume.forEach(id => inventory[id]--);
-        
+
         // Reward
         const rewardIndex = Math.floor(Math.random() * box.rewards.length);
         const reward = box.rewards[rewardIndex];
@@ -754,6 +833,7 @@
         }
         renderRewardLog();
 
+        cancelSelectionMode();
         showModal(reward.name);
         renderInventory();
         renderBoxes();
