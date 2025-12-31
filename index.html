@@ -252,9 +252,9 @@
             </div>
             <div class="gacha-controls">
                 <p>使用商城販售的「新年的氣息」道具，隨機獲得一個「十二生肖氣息」。</p>
-                <p>目前累計抽取次數: <span id="totalDraws" style="font-weight:bold; color:var(--primary-red);">0</span></p>
-                <button class="btn-primary" onclick="drawGacha(1)">使用 1 個氣息</button>
-                <button class="btn-primary" onclick="drawGacha(10)">使用 10 個氣息</button>
+                <p>目前累計抽取次數: <span id="totalDraws" style="font-weight:bold; color:var(--primary-red);">0</span> <span style="color:#666; font-size:0.9em;">(累積花費: <span id="totalCost">0</span>)</span></p>
+                <button class="btn-primary" onclick="drawGacha(1)">使用 1 個氣息 (30)</button>
+                <button class="btn-primary" onclick="drawGacha(10)">使用 10 個氣息 (270)</button>
             </div>
         </div>
 
@@ -406,6 +406,7 @@
     // --- State ---
     let inventory = {};
     let totalDraws = 0;
+    let totalCost = 0;
     let essence = 0;
     let exchangeTargetId = null;
     let rewardCounts = {};
@@ -443,6 +444,8 @@
         
         totalDraws = 0;
         document.getElementById('totalDraws').innerText = 0;
+        totalCost = 0;
+        document.getElementById('totalCost').innerText = 0;
         document.getElementById('logArea').innerHTML = '';
         log("數據已重置。");
         renderInventory();
@@ -475,6 +478,10 @@
 
     // --- Logic: Gacha ---
     function drawGacha(times) {
+        const cost = (times === 10) ? 270 : (times * 30);
+        totalCost += cost;
+        document.getElementById('totalCost').innerText = totalCost;
+
         let results = [];
         for(let i=0; i<times; i++) {
             const rand = Math.random() * 100;
