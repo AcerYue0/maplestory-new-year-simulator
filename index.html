@@ -261,10 +261,10 @@
                 <span>1. 獲取氣息</span>
             </div>
             <div class="gacha-controls">
-                <p>使用商城販售的「新年的氣息」道具，隨機獲得一個「十二生肖氣息」。</p>
                 <p>目前累計抽取次數: <span id="totalDraws" style="font-weight:bold; color:var(--primary-red);">0</span> <span style="color:#666; font-size:0.9em;">(累積花費: <span id="totalCost">0</span>)</span></p>
                 <button class="btn-primary" onclick="drawGacha(1)">使用 1 個氣息 (30)</button>
                 <button class="btn-primary" onclick="drawGacha(10)">使用 10 個氣息 (270)</button>
+                <button class="btn-gold" id="autoDrawBtn" onclick="toggleAutoDraw()">一鍵上頭</button>
             </div>
         </div>
 
@@ -425,6 +425,7 @@
     let currentBoxId = null;
     let selectedMaterials = new Set();
     let isSelectionMode = false;
+    let autoDrawInterval = null;
 
     // --- Initialization ---
     function init() {
@@ -448,6 +449,7 @@
     }
 
     function resetData() {
+        if (autoDrawInterval) toggleAutoDraw();
         inventory = {};
         ZODIACS.forEach(z => {
             inventory[z.id] = 0;
@@ -524,6 +526,30 @@
 
         renderInventory();
         renderBoxes(); // Update box availability
+    }
+
+    function toggleAutoDraw() {
+        if (autoDrawInterval) {
+            clearInterval(autoDrawInterval);
+            autoDrawInterval = null;
+            document.getElementById('autoDrawBtn').innerText = "一鍵上頭";
+            log("已停止自動抽取。");
+        } else {
+            if (ZODIACS.every(z => inventory[z.id] > 0)) {
+                alert("您已經集齊所有氣息了！");
+                return;
+            }
+            document.getElementById('autoDrawBtn').innerText = "停止抽取";
+            log("開始一鍵上頭模式！");
+            autoDrawInterval = setInterval(() => {
+                drawGacha(10);
+                if (ZODIACS.every(z => inventory[z.id] > 0)) {
+                    toggleAutoDraw();
+                    log("恭喜！已集齊所有 12 種氣息，自動停止。");
+                    alert("恭喜！已集齊所有 12 種氣息！");
+                }
+            }, 100);
+        }
     }
 
     // --- Logic: Inventory & Essence ---
