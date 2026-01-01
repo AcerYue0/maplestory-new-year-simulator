@@ -273,6 +273,12 @@
             <div class="section-title">活動紀錄</div>
             <div class="log-area" id="logArea"></div>
         </div>
+
+        <!-- Collection Records -->
+        <div class="section-card">
+            <div class="section-title">Checkpoint</div>
+            <div class="log-area" id="collectionLogArea"></div>
+        </div>
     </div>
 
     <!-- Right Panel -->
@@ -400,7 +406,7 @@
         {
             id: 'large', name: '大吉等級箱子', req: 9, color: '#ba68c8',
             rewards: [
-                { name: '魔法賦予第3階段賦予卷軸(罕見)', img: './src/魔法賦予第3階段賦予卷軸(罕見).png' },
+                { name: '魔法賦予第3階段賦予卷軸', img: './src/魔法賦予第3階段賦予卷軸(罕見).png' },
                 { name: '時裝內襯1種選擇券', img: './src/時裝內襯1種選擇券.png' },
                 { name: '魔法靈氣30個', img: './src/魔法靈氣.png' }
             ]
@@ -426,6 +432,10 @@
     let selectedMaterials = new Set();
     let isSelectionMode = false;
     let autoDrawInterval = null;
+    let roundDraws = 0;
+    let roundCost = 0;
+    let collectionRound = 0;
+    let completedSetsLevel = 0;
 
     // --- Initialization ---
     function init() {
@@ -461,7 +471,12 @@
         document.getElementById('totalDraws').innerText = 0;
         totalCost = 0;
         document.getElementById('totalCost').innerText = 0;
+        roundDraws = 0;
+        roundCost = 0;
+        collectionRound = 0;
+        completedSetsLevel = 0;
         document.getElementById('logArea').innerHTML = '';
+        document.getElementById('collectionLogArea').innerHTML = '';
         log("數據已重置。");
         renderInventory();
         renderBoxes();
@@ -495,6 +510,7 @@
     function drawGacha(times) {
         const cost = (times === 10) ? 270 : (times * 30);
         totalCost += cost;
+        roundCost += cost;
         document.getElementById('totalCost').innerText = totalCost;
 
         let results = [];
@@ -511,6 +527,7 @@
             }
         }
         totalDraws += times;
+        roundDraws += times;
         document.getElementById('totalDraws').innerText = totalDraws;
         
         // Log results
@@ -524,6 +541,7 @@
             log(`10連抽結果: ${logStr}`);
         }
 
+        updateCompletionStatus();
         renderInventory();
         renderBoxes(); // Update box availability
     }
@@ -535,20 +553,41 @@
             document.getElementById('autoDrawBtn').innerText = "一鍵上頭";
             log("已停止自動抽取。");
         } else {
-            if (ZODIACS.every(z => inventory[z.id] > 0)) {
-                alert("您已經集齊所有氣息了！");
-                return;
-            }
+            const currentMin = Math.min(...ZODIACS.map(z => inventory[z.id]));
+            const targetMin = currentMin + 1;
+
             document.getElementById('autoDrawBtn').innerText = "停止抽取";
-            log("開始一鍵上頭模式！");
+            log(`開始一鍵上頭模式！目標：集齊每種氣息至少 ${targetMin} 個`);
             autoDrawInterval = setInterval(() => {
                 drawGacha(10);
-                if (ZODIACS.every(z => inventory[z.id] > 0)) {
+                const newMin = Math.min(...ZODIACS.map(z => inventory[z.id]));
+                if (newMin >= targetMin) {
                     toggleAutoDraw();
-                    log("恭喜！已集齊所有 12 種氣息，自動停止。");
-                    alert("恭喜！已集齊所有 12 種氣息！");
+                    log(`恭喜！已達成目標 (每種至少 ${targetMin} 個)，自動停止。`);
+                    alert(`恭喜！已達成目標 (每種至少 ${targetMin} 個)！`);
                 }
             }, 100);
+        }
+    }
+
+    function updateCompletionStatus() {
+        const currentMin = Math.min(...ZODIACS.map(z => inventory[z.id]));
+        
+        if (currentMin > completedSetsLevel) {
+            const levelsGained = currentMin - completedSetsLevel;
+            for(let i=0; i<levelsGained; i++) {
+                collectionRound++;
+                const area = document.getElementById('collectionLogArea');
+                const div = document.createElement('div');
+                const levelReached = completedSetsLevel + i + 1;
+                div.innerText = `第 ${collectionRound} 次集齊: 累積 ${roundDraws} 抽, 金額 ${roundCost}`;
+                area.prepend(div);
+                roundDraws = 0;
+                roundCost = 0;
+            }
+            completedSetsLevel = currentMin;
+        } else if (currentMin < completedSetsLevel) {
+            completedSetsLevel = currentMin;
         }
     }
 
@@ -662,6 +701,7 @@
         
         log(`消耗 ${cost} 精華，兌換了 [${getZodiacName(exchangeTargetId)}]`);
         closeExchangeModal();
+        updateCompletionStatus();
         renderInventory();
         renderBoxes();
     }
@@ -734,6 +774,7 @@
         log(`分解: ${logDetails.join(', ')}，獲得 ${totalEssence} 精華`);
         
         closeDecomposeModal();
+        updateCompletionStatus();
         renderInventory();
         renderBoxes();
     }
@@ -861,6 +902,7 @@
 
         cancelSelectionMode();
         showModal(reward.name);
+        updateCompletionStatus();
         renderInventory();
         renderBoxes();
     }
